@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H_Burguer V10 Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { 
+            --bg: #0a0710; --surface: rgba(24,17,31,0.95); --text: #f8f3eb; 
+            --muted: #b7aa9b; --accent: #a46bc1; --gold: #f0c868; --radius: 20px;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+        /* Header */
+        header { background: var(--surface); backdrop-filter: blur(20px); padding: 16px 0; position: sticky; top: 0; z-index: 100; }
+        .header-inner { display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo img { width: 56px; height: 56px; border-radius: 14px; border: 2px solid rgba(240,200,104,0.4); }
+        .logo h1 { font-size: 1.5rem; font-weight: 900; }
+        .logo p { font-size: 0.85rem; color: var(--muted); }
+
+        /* Menu Burger */
+        input[type="checkbox"] { display: none; }
+        .burger { display: flex; flex-direction: column; gap: 4px; cursor: pointer; padding: 8px; }
+        .burger span { width: 28px; height: 3px; background: var(--text); border-radius: 3px; transition: 0.3s ease; }
+        input:checked ~ .burger span:nth-child(1) { transform: rotate(45deg) translate(6px, 6px); }
+        input:checked ~ .burger span:nth-child(2) { opacity: 0; }
+        input:checked ~ .burger span:nth-child(3) { transform: rotate(-45deg) translate(6px, -6px); }
+        .mobile-nav { 
+            position: fixed; top: 0; left: 0; width: 280px; height: 100vh; background: var(--surface); 
+            transform: translateX(-100%); transition: transform 0.4s ease; padding: 80px 24px; z-index: 99;
+        }
+        input:checked ~ .mobile-nav { transform: translateX(0); }
+        .nav-list { list-style: none; }
+        .nav-list a { display: block; padding: 20px 0; color: var(--text); font-size: 1.3rem; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        @media (min-width: 768px) { .burger, .mobile-nav { display: none; } }
+        .desktop-nav { display: none; }
+        @media (min-width: 768px) { 
+            .desktop-nav { display: flex; gap: 24px; } 
+            .desktop-nav a { color: var(--muted); font-weight: 700; text-decoration: none; }
+            .desktop-nav a:hover { color: var(--text); }
+        }
+
+        /* Hero */
+        .hero { padding: 80px 0; text-align: center; }
+        .hero h1 { font-size: clamp(2.5rem, 6vw, 4rem); margin-bottom: 20px; }
+        .hero p { max-width: 600px; margin: 0 auto 40px; color: var(--muted); font-size: 1.1rem; }
+        .hero-actions { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .btn { padding: 16px 32px; border-radius: var(--radius); font-weight: 800; text-decoration: none; transition: all 0.3s ease; box-shadow: var(--shadow); }
+        .btn-primary { background: linear-gradient(135deg, var(--gold), #d19e2d); color: #17120f; }
+        .btn-ghost { background: transparent; color: var(--text); border: 2px solid var(--accent); }
+
+        /* Sections */
+        .section { padding: 60px 0; }
+        .section h2 { font-size: clamp(2rem, 5vw, 3rem); text-align: center; margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+        .card { background: var(--surface); border-radius: var(--radius); padding: 28px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-8px); box-shadow: var(--shadow); }
+        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 16px; margin-bottom: 16px; }
+        .price { font-size: 1.6rem; font-weight: 900; color: var(--gold); margin: 12px 0; }
+
+        /* Admin Panel */
+        .admin-panel { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(10,7,16,0.98); backdrop-filter: blur(40px); z-index: 2000; 
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .admin-panel.active { display: flex; }
+        .admin-content { 
+            background: var(--surface); border-radius: var(--radius); padding: 32px; max-width: 800px; 
+            max-height: 90vh; overflow-y: auto; width: 100%; border: 2px solid var(--accent);
+        }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 20px; background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: all 0.3s; }
+        .tab-btn.active { background: var(--accent); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: var(--text); font-size: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+        .admin-login { text-align: center; padding: 40px; }
+        .admin-login input { margin-bottom: 20px; }
+
+        /* Footer */
+        footer { padding: 40px 0; text-align: center; color: var(--muted); }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .reveal { opacity: 0; animation: fadeInUp 0.8s ease forwards; }
+    </style>
+</head>
+<body>
+    <input type="checkbox" id="mobile-menu">
+
+    <header>
+        <div class="container">
+            <div class="header-inner">
+                <label for="mobile-menu" class="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </label>
+                <div class="logo">
+                    <img src="assets/logo-h-burguer.jpeg" alt="H_Burguer">
+                    <div>
+                        <h1>H_Burguer</h1>
+                        <p>V10 Admin</p>
+                    </div>
+                </div>
+                <nav class="desktop-nav">
+                    <a href="#menu">Menu</a>
+                    <a href="#gallery">Galerie</a>
+                    <a href="#order">Commander</a>
+                    <a href="#" class="btn btn-primary" onclick="openAdmin()">Admin</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-nav">
+        <ul>
+            <li><a href="#menu">Menu</a></li>
+            <li><a href="#gallery">Galerie</a></li>
+            <li><a href="#order">Commander</a></li>
+            <li><a href="#" onclick="openAdmin()">Admin</a></li>
+        </ul>
+    </div>
+
+    <section class="hero reveal">
+        <div class="container">
+            <h1>V10 Admin Complet</h1>
+            <p>Gestion totale du site depuis le panel admin. Mot de passe démo : HBURG10</p>
+            <div class="hero-actions">
+                <a href="#menu" class="btn btn-primary">Voir le menu</a>
+                <a href="#" class="btn btn-ghost" onclick="openAdmin()">Panel admin</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu" class="section">
+        <div class="container">
+            <h2 class="reveal">Menu</h2>
+            <div class="grid" id="menuContainer"></div>
+        </div>
+    </section>
+
+    <section id="gallery" class="section">
+        <div class="container">
+            <h2 class="reveal">Galerie</h2>
+            <div class="grid" id="galleryContainer"></div>
+        </div>
+    </section>
+
+    <section id="order" class="section">
+        <div class="container">
+            <h2 class="reveal">Commande</h2>
+            <div class="grid">
+                <div class="card reveal">
+                    <h3>Panier</h3>
+                    <div id="cartList"></div>
+                    <div class="price" id="totalPrice">0,00€</div>
+                </div>
+                <div class="card reveal">
+                    <h3>WhatsApp</h3>
+                    <a href="#" id="whatsappLink" class="btn btn-primary">Commander</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PANEL ADMIN -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <div>
+                    <h2>Panel Admin</h2>
+                    <p>Mot de passe : HBURG10</p>
+                </div>
+                <button onclick="closeAdmin()" class="btn btn-ghost">Fermer</button>
+            </div>
+
+            <!-- Login admin -->
+            <div id="adminLogin" class="admin-login">
+                <input type="password" id="adminPassword" placeholder="HBURG10">
+                <button class="btn btn-primary" onclick="loginAdmin()">Connexion</button>
+            </div>
+
+            <!-- Interface admin -->
+            <div id="adminInterface" style="display: none;">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="switchTab('site')">Site</button>
+                    <button class="tab-btn" onclick="switchTab('products')">Produits</button>
+                    <button class="tab-btn" onclick="switchTab('gallery')">Galerie</button>
+                    <button class="tab-btn" onclick="switchTab('settings')">Paramètres</button>
+                </div>
+
+                <div id="site-tab" class="tab-content active">
+                    <div class="form-group">
+                        <label>Titre hero</label>
+                        <input type="text" id="siteTitleInput">
+                    </div>
+                    <div class="form-group">
+                        <label>Texte hero</label>
+                        <textarea id="siteHeroInput" rows="3"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSite()">Sauvegarder site</button>
+                </div>
+
+                <div id="products-tab" class="tab-content">
+                    <h3>Ajouter produit</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nom</label>
+                            <input type="text" id="prodName">
+                        </div>
+                        <div class="form-group">
+                            <label>Prix</label>
+                            <input type="number" id="prodPrice" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="prodDesc" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="url" id="prodImg">
+                    </div>
+                    <button class="btn btn-primary" onclick="addProduct()">Ajouter</button>
+                    <div id="productsList"></div>
+                </div>
+
+                <div id="gallery-tab" class="tab-content">
+                    <h3>Ajouter image</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Titre</label>
+                            <input type="text" id="galTitle">
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL</label>
+                            <input type="url" id="galImg">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Légende</label>
+                        <textarea id="galCaption" rows="2"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="addGallery()">Ajouter</button>
+                    <div id="galleryList"></div>
+                </div>
+
+                <div id="settings-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>WhatsApp (336...)</label>
+                        <input type="tel" id="whatsappNum">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
+                    <button class="btn btn-danger" onclick="resetAll()">Réinitialiser tout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données
+        let siteData = JSON.parse(localStorage.getItem('hburguer-v10') || '{}');
+        let isAdminLogged = false;
+        let cart = [];
+
+        const defaultData = {
+            site: { title: 'H_Burguer V10', hero: 'Boutique premium avec admin complet' },
+            whatsapp: '33600000000',
+            products: [
+                { name: 'Galactic Gold', price: 14.9, desc: 'Steak smash premium', img: 'assets/logo-h-burguer.jpeg' }
+            ],
+            gallery: [
+                { title: 'Logo', img: 'assets/logo-h-burguer.jpeg', caption: 'Identité visuelle' }
+            ]
+        };
+
+        // Charger données
+        if (!siteData.site) siteData = defaultData;
+
+        // Render
+        function render() {
+            document.querySelector('.hero h1').textContent = siteData.site.title;
+            document.querySelector('.hero p').textContent = siteData.site.hero;
+
+            document.getElementById('menuContainer').innerHTML = siteData.products.map(p => `
+                <div class="card">
+                    <img src="${p.img}">
+                    <h3>${p.name}</h3>
+                    <p>${p.desc}</p>
+                    <div class="price">${p.price.toFixed(1)}€</div>
+                    <button class="add-cart-btn" onclick="addToCart('${p.name}', ${p.price})">Ajouter</button>
+                </div>
+            `).join('');
+
+            document.getElementById('galleryContainer').innerHTML = siteData.gallery.map(g => `
+                <div class="card">
+                    <img src="${g.img}">
+                    <h3>${g.title}</h3>
+                    <p>${g.caption}</p>
+                </div>
+            `).join('');
+
+            updateCart();
+        }
+
+        function addToCart(name, price) {
+            const item = cart.find(i => i.name === name);
+            if (item) item.qty++;
+            else cart.push({ name, price, qty: 1 });
+            updateCart();
+        }
+
+        function updateCart() {
+            const list = document.getElementById('cartList');
+            const total = document.getElementById('totalPrice');
+            const whatsapp = document.getElementById('whatsappLink');
+
+            if (cart.length === 0) {
+                list.innerHTML = '<p style="color: var(--muted);">Panier vide</p>';
+                total.textContent = '0,00€';
+                whatsapp.href = '#';
+            } else {
+                list.innerHTML = cart.map(i => `<div>${i.name} x${i.qty} - ${(i.qty * i.price).toFixed(1)}€</div>`).join('');
+                const tot = cart.reduce((s, i) => s + i.qty * i.price, 0);
+                total.textContent = tot.toFixed(1) + '€';
+                whatsapp.href = `https://wa.me/${siteData.whatsapp}?text=Commande H_Burguer ${cart.map(i => i.name + ' x' + i.qty).join(', ')} Total: ${tot.toFixed(1)}€`;
+                whatsapp.textContent = `Commander (${tot.toFixed(1)}€)`;
+            }
+        }
+
+        // Admin
+        function openAdmin() {
+            document.getElementById('adminPanel').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAdmin() {
+            document.getElementById('adminPanel').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function loginAdmin() {
+            if (document.getElementById('adminPassword').value === 'HBURG10') {
+                isAdminLogged = true;
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminInterface').style.display = 'block';
+                loadAdminData();
+            } else {
+                alert('Mot de passe incorrect (HBURG10)');
+            }
+        }
+
+        function loadAdminData() {
+            document.getElementById('siteTitleInput').value = siteData.site.title;
+            document.getElementById('siteHeroInput').value = siteData.site.hero;
+            document.getElementById('whatsappNum').value = siteData.whatsapp;
+
+            document.getElementById('productsList').innerHTML = siteData.products.map((p, i) => `
+                <div class="card" style="margin: 12px 0; padding: 20px;">
+                    <img src="${p.img}" style="width: 60px; height: 60px; border-radius: 12px; float: left; margin-right: 16px;">
+                    <h4>${p.name}</h4>
+                    <p>${p.price}€ - ${p.desc}</p>
+                    <button class="btn btn-danger" onclick="deleteProduct(${i})" style="float: right;">Supprimer</button>
+                </div>
+            `).join('');
+
+            document.getElementById('galleryList').innerHTML = siteData.gallery.map((g, i) => `
+                <div class="card" style="margin: 12px 0; padding: 20px;">
+                    <img src="${g.img}" style="width: 60px; height: 60px; border-radius: 12px; float: left; margin-right: 16px;">
+                    <h4>${g.title}</h4>
+                    <p>${g.caption}</p>
+                    <button class="btn btn-danger" onclick="deleteGallery(${i})" style="float: right;">Supprimer</button>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        function saveSite() {
+            siteData.site.title = document.getElementById('siteTitleInput').value;
+            siteData.site.hero = document.getElementById('siteHeroInput').value;
+            localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+            render();
+            alert('Site sauvegardé !');
+        }
+
+        function addProduct() {
+            const name = document.getElementById('prodName').value;
+            const price = parseFloat(document.getElementById('prodPrice').value);
+            const desc = document.getElementById('prodDesc').value;
+            const img = document.getElementById('prodImg').value || 'assets/logo-h-burguer.jpeg';
+
+            if (name && price) {
+                siteData.products.unshift({ name, price, desc, img });
+                localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+                render();
+                loadAdminData();
+                document.getElementById('prodName').value = '';
+            }
+        }
+
+        function deleteProduct(i) {
+            siteData.products.splice(i, 1);
+            localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+            render();
+            loadAdminData();
+        }
+
+        function addGallery() {
+            const title = document.getElementById('galTitle').value;
+            const img = document.getElementById('galImg').value || 'assets/logo-h-burguer.jpeg';
+            const caption = document.getElementById('galCaption').value;
+
+            if (title) {
+                siteData.gallery.unshift({ title, img, caption });
+                localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+                render();
+                loadAdminData();
+            }
+        }
+
+        function deleteGallery(i) {
+            siteData.gallery.splice(i, 1);
+            localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+            render();
+            loadAdminData();
+        }
+
+        function saveSettings() {
+            siteData.whatsapp = document.getElementById('whatsappNum').value;
+            localStorage.setItem('hburguer-v10', JSON.stringify(siteData));
+            render();
+            alert('Paramètres OK !');
+        }
+
+        function resetAll() {
+            if (confirm('Tout réinitialiser ?')) {
+                localStorage.removeItem('hburguer-v10');
+                location.reload();
+            }
+        }
+
+        // Intersection Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Init
+        render();
+    </script>
+</body>
+</html>
